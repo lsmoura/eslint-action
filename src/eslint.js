@@ -7,7 +7,7 @@ function eslintExec() {
   const report = cli.executeOnFiles(['.']);
   const { results, errorCount, warningCount /*, fixableErrorCount, fixableWarningCount */ } = report;
 
-  console.log(results);
+  console.log(JSON.stringify(results, null, 2));
 }
 
 module.exports = eslintExec;
