@@ -16,6 +16,8 @@ function request(url, options) {
             err.data = data;
             reject(err);
           } else {
+            console.log('request finished');
+            console.log(data);
             accept({ res, data: JSON.parse(data) });
           }
         });

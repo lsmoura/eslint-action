@@ -27,6 +27,11 @@ function createCheck() {
     head_sha: GITHUB_SHA,
     status: 'in_progress',
     started_at: new Date(),
+    output: {
+      title: CHECK_NAME,
+      summary: '',
+      text: '',
+    },
   };
 
   return request(githubCheckUrl(), {
