@@ -1,6 +1,7 @@
 const https = require('https');
 
 function request(url, options) {
+  console.log('request', url, JSON.stringify(options));
   return new Promise((accept, reject) => {
     const req = https
       .request(url, options, res => {

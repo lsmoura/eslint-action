@@ -12,6 +12,8 @@ if (!GITHUB_TOKEN) {
   throw new Error('required environment variable not found: GITHUB_TOKEN');
 }
 
+const githubCheckUrl = (extra) => `https://api.github.com/repos/${OWNER}/${REPO}/check-runs${extra !== undefined ? extra : ''}`;
+
 function createCheck() {
   const headers = {
     'Content-Type': 'application/json',
@@ -27,7 +29,7 @@ function createCheck() {
     started_at: new Date(),
   };
 
-  return request(`https://api.github.com/repos/${OWNER}/${REPO}/check-runs`, {
+  return request(githubCheckUrl(), {
     method: 'POST',
     headers,
     body
@@ -51,7 +53,7 @@ function updateCheck(id, conclusion, output) {
     output
   };
 
-  return request(`https://api.github.com/repos/${OWNER}/${REPO}/check-runs/${id}`, {
+  return request(githubCheckUrl(`/${id}`), {
     method: 'PATCH',
     headers,
     body
@@ -67,4 +69,7 @@ async function run() {
   console.log('done');
 }
 
-run();
+run().catch(err => {
+  console.error(err);
+  console.trace();
+});
