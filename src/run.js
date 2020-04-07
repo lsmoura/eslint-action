@@ -74,13 +74,13 @@ function parseEslintResponse(response) {
     messages.forEach(({ line, severity, ruleId, message, fix }) => {
       const annotationSeverity = levels[severity];
 
-      let message = `[${ruleId}]: ${message}`;
+      let annotationMessage = `[${ruleId}]: ${message}`;
 
       if (fix) {
         const suggestionFix = source.substr(0, fix.range[0]) + ';' + source.substr(fix.range[1]);
         const lines = suggestionFix.split('\n');
         const effectLine = lines[line - 1];
-        message += `\n\`\`\`suggestion\n${effectLine}\n\`\`\`\n`;
+        annotationMessage += `\n\`\`\`suggestion\n${effectLine}\n\`\`\`\n`;
       }
 
       annotations.push({
@@ -88,7 +88,7 @@ function parseEslintResponse(response) {
         start_line: line,
         end_line: line,
         annotation_level: annotationSeverity,
-        message,
+        annotationMessage,
       });
     });
   }));
