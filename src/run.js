@@ -1,7 +1,7 @@
 const eslint = require('./eslint');
 const request = require('./request');
 
-const { GITHUB_SHA, GITHUB_TOKEN, GITHUB_EVENT_PATH } = process.env;
+const { GITHUB_SHA, GITHUB_TOKEN, GITHUB_EVENT_PATH, GITHUB_WORKSPACE } = process.env;
 const event = require(GITHUB_EVENT_PATH);
 
 const CHECK_NAME = 'eslint';
@@ -60,16 +60,38 @@ function updateCheck(id, conclusion, output) {
   });
 }
 
+function parseEslintResponse(response) {
+  const levels = ['', 'warning', 'failure'];
+
+  const annotations = [];
+  response.forEach((({ filePath, messages }) => {
+    const path = filePath.substring(GITHUB_WORKSPACE.length + 1);
+    messages.forEach(({ line, severity, ruleId, message }) => {
+      const annotationSeverity = levels[severity];
+
+      annotations.push({
+        path,
+        start_line: line,
+        end_line: line,
+        annotation_level: annotationSeverity,
+        message: `[${ruleId}] ${message}`,
+      });
+    });
+  }));
+
+  return annotations;
+}
+
 async function run() {
   const checkResponse = await createCheck();
-  console.log(checkResponse);
   const lintResponse = eslint();
 
-  const conclusion = 'success';
+  const annotations = parseEslintResponse(lintResponse.results);
+  const conclusion = lintResponse.errorCount <= 0 ? 'success' : 'failure';
   const output = {
     title: CHECK_NAME,
-    summary: 'all good',
-    annotations: [],
+    summary: `${lintResponse.errorCount} error${lintResponse.errorCount > 1 ? 's' : ''}, ${lintResponse.warningCount} warning${lintResponse.warningCount > 1 ? 's' : ''} found`,
+    annotations: annotations,
   };
   await updateCheck(checkResponse.id, conclusion, output);
 

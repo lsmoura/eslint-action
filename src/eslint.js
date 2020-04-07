@@ -1,15 +1,12 @@
 const eslint = require('eslint');
 
-const levels = ['', 'warning', 'failure'];
-
-function eslintExec() {
+function eslintExec(files = ['.']) {
   const cli = new eslint.CLIEngine();
-  const report = cli.executeOnFiles(['.']);
+  const report = cli.executeOnFiles(files);
   const { results, errorCount, warningCount /*, fixableErrorCount, fixableWarningCount */ } = report;
-
   console.log(JSON.stringify(results, null, 2));
 
-  return results;
+  return report;
 }
 
 module.exports = eslintExec;
