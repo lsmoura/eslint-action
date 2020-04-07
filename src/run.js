@@ -112,11 +112,11 @@ async function run() {
   const lintResponse = eslint();
   const result = await submitResult(checkResponse.id, lintResponse);
 
-  console.log('done');
   if (!result) process.exit(78);
 }
 
 run().catch(err => {
   console.error(err);
   console.trace();
+  process.exit(1);
 });
