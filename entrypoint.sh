@@ -14,4 +14,4 @@ else
   npm install
 fi
 
-echo "Hello world"
+NODE_PATH=node_modules node /action/run.js
