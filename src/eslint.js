@@ -1,6 +1,6 @@
-const eslint = require('eslint')
+const eslint = require('eslint');
 
-const levels = ['', 'warning', 'failure']
+const levels = ['', 'warning', 'failure'];
 
 function eslintExec() {
   const cli = new eslint.CLIEngine();
@@ -8,6 +8,8 @@ function eslintExec() {
   const { results, errorCount, warningCount /*, fixableErrorCount, fixableWarningCount */ } = report;
 
   console.log(JSON.stringify(results, null, 2));
+
+  return results;
 }
 
 module.exports = eslintExec;

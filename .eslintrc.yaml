@@ -5,6 +5,7 @@ globals:
   process: true
   Promise: true
   module: true
+  console: true
 
 rules:
   semi: error

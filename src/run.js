@@ -8,6 +8,10 @@ const CHECK_NAME = 'eslint';
 const OWNER = event.repository.owner.login;
 const REPO = event.repository.name;
 
+if (!GITHUB_TOKEN) {
+  throw new Error('required environment variable not found: GITHUB_TOKEN');
+}
+
 function createCheck() {
   const headers = {
     'Content-Type': 'application/json',
@@ -30,11 +34,37 @@ function createCheck() {
   }).then(response => response.data);
 }
 
+function updateCheck(id, conclusion, output) {
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.github.antiope-preview+json',
+    Authorization: `Bearer ${GITHUB_TOKEN}`,
+    'User-Agent': 'eslint-action',
+  };
+
+  const body = {
+    name: CHECK_NAME,
+    head_sha: GITHUB_SHA,
+    status: 'completed',
+    completed_at: new Date(),
+    conclusion,
+    output
+  };
+
+  return request(`https://api.github.com/repos/${OWNER}/${REPO}/check-runs/${id}`, {
+    method: 'PATCH',
+    headers,
+    body
+  });
+}
+
 
 async function run() {
   const checkResponse = await createCheck();
   console.log(checkResponse);
-  eslint();
+  const lintResponse = eslint();
+  await updateCheck(checkResponse.id, 'finished', lintResponse);
+  console.log('done');
 }
 
 run();
