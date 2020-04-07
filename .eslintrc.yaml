@@ -3,6 +3,8 @@ parser: babel-eslint
 globals:
   require: true
   process: true
+  Promise: true
+  module: true
 
 rules:
   semi: error
