@@ -1,0 +1,12 @@
+{
+  "name": "eslint-action",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:lsmoura/eslint-action.git",
+  "author": "Sergio Moura <sergio@moura.ca>",
+  "license": "MIT",
+  "dependencies": {
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.8.0"
+  }
+}

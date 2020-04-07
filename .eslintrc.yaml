@@ -1,0 +1,9 @@
+parser: babel-eslint
+
+globals:
+  require: true
+  process: true
+
+rules:
+  semi: error
+  no-undef: error
