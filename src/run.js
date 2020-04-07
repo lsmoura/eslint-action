@@ -88,7 +88,7 @@ function parseEslintResponse(response) {
         start_line: line,
         end_line: line,
         annotation_level: annotationSeverity,
-        annotationMessage,
+        message: annotationMessage,
       });
     });
   }));
