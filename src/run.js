@@ -1,10 +1,10 @@
 const eslint = require('./eslint');
 const request = require('./request');
 
-const { GITHUB_SHA, GITHUB_TOKEN, GITHUB_EVENT_PATH, GITHUB_WORKSPACE } = process.env;
+const { GITHUB_SHA, GITHUB_TOKEN, GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_ACTION } = process.env;
 const event = require(GITHUB_EVENT_PATH);
 
-const CHECK_NAME = 'eslint';
+const CHECK_NAME = GITHUB_ACTION || 'eslint';
 const OWNER = event.repository.owner.login;
 const REPO = event.repository.name;
 
@@ -90,15 +90,16 @@ function submitResult(id, { results, errorCount, warningCount }) {
     summary: `${errorCount} error${errorCount > 1 ? 's' : ''}, ${warningCount} warning${warningCount > 1 ? 's' : ''} found`,
     annotations,
   };
-  return updateCheck(id, conclusion, output);
+  return updateCheck(id, conclusion, output).then(() => conclusion === 'success');
 }
 
 async function run() {
   const checkResponse = await createCheck();
   const lintResponse = eslint();
-  await submitResult(checkResponse.id, lintResponse);
+  const result = await submitResult(checkResponse.id, lintResponse);
 
   console.log('done');
+  if (!result) process.exit(78);
 }
 
 run().catch(err => {
