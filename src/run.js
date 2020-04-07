@@ -69,17 +69,26 @@ function parseEslintResponse(response) {
   const levels = ['', 'warning', 'failure'];
 
   const annotations = [];
-  response.forEach((({ filePath, messages }) => {
+  response.forEach((({ filePath, messages, source }) => {
     const path = filePath.substring(GITHUB_WORKSPACE.length + 1);
-    messages.forEach(({ line, severity, ruleId, message }) => {
+    messages.forEach(({ line, severity, ruleId, message, fix }) => {
       const annotationSeverity = levels[severity];
+
+      let message = `[${ruleId}]: ${message}`;
+
+      if (fix) {
+        const suggestionFix = source.substr(0, fix.range[0]) + ';' + source.substr(fix.range[1]);
+        const lines = suggestionFix.split('\n');
+        const effectLine = lines[line - 1];
+        message += `\n\`\`\`suggestion\n${effectLine}\n\`\`\`\n`;
+      }
 
       annotations.push({
         path,
         start_line: line,
         end_line: line,
         annotation_level: annotationSeverity,
-        message: `[${ruleId}] ${message}`,
+        message,
       });
     });
   }));
