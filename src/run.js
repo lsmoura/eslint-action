@@ -82,18 +82,21 @@ function parseEslintResponse(response) {
   return annotations;
 }
 
+function submitResult(id, { results, errorCount, warningCount }) {
+  const annotations = parseEslintResponse(results);
+  const conclusion = errorCount <= 0 ? 'success' : 'failure';
+  const output = {
+    title: CHECK_NAME,
+    summary: `${errorCount} error${errorCount > 1 ? 's' : ''}, ${warningCount} warning${warningCount > 1 ? 's' : ''} found`,
+    annotations,
+  };
+  return updateCheck(id, conclusion, output);
+}
+
 async function run() {
   const checkResponse = await createCheck();
   const lintResponse = eslint();
-
-  const annotations = parseEslintResponse(lintResponse.results);
-  const conclusion = lintResponse.errorCount <= 0 ? 'success' : 'failure';
-  const output = {
-    title: CHECK_NAME,
-    summary: `${lintResponse.errorCount} error${lintResponse.errorCount > 1 ? 's' : ''}, ${lintResponse.warningCount} warning${lintResponse.warningCount > 1 ? 's' : ''} found`,
-    annotations: annotations,
-  };
-  await updateCheck(checkResponse.id, conclusion, output);
+  await submitResult(checkResponse.id, lintResponse);
 
   console.log('done');
 }
