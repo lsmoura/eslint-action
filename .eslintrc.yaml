@@ -10,3 +10,7 @@ globals:
 rules:
   semi: error
   no-undef: error
+  eol-last: warn
+  comma-dangle:
+    - warn
+    - always-multiline

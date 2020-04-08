@@ -1,68 +1,22 @@
 const eslint = require('./eslint');
-const request = require('./request');
+const check = require('./github_check');
 
-const { GITHUB_SHA, GITHUB_TOKEN, GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_ACTION } = process.env;
-const event = require(GITHUB_EVENT_PATH);
+const { GITHUB_TOKEN, GITHUB_WORKSPACE, GITHUB_ACTION } = process.env;
 
 const CHECK_NAME = GITHUB_ACTION || 'eslint';
-const OWNER = event.repository.owner.login;
-const REPO = event.repository.name;
 
 if (!GITHUB_TOKEN) {
   throw new Error('required environment variable not found: GITHUB_TOKEN');
 }
 
-const githubCheckUrl = (extra) => `https://api.github.com/repos/${OWNER}/${REPO}/check-runs${extra !== undefined ? extra : ''}`;
-
-function createCheck() {
-  const headers = {
-    'Content-Type': 'application/json',
-    Accept: 'application/vnd.github.antiope-preview+json',
-    Authorization: `Bearer ${GITHUB_TOKEN}`,
-    'User-Agent': 'eslint-action',
-  };
-
-  const body = {
-    name: CHECK_NAME,
-    head_sha: GITHUB_SHA,
-    status: 'in_progress',
-    started_at: new Date(),
-    output: {
-      title: CHECK_NAME,
-      summary: '',
-      text: '',
-    },
-  };
-
-  return request(githubCheckUrl(), {
-    method: 'POST',
-    headers,
-    body
-  }).then(response => response.data);
+function applyFix(source, fix) {
+  if (!fix) return source;
+  return source.substr(0, fix.range[0]) + ';' + source.substr(fix.range[1]);
 }
 
-function updateCheck(id, conclusion, output) {
-  const headers = {
-    'Content-Type': 'application/json',
-    Accept: 'application/vnd.github.antiope-preview+json',
-    Authorization: `Bearer ${GITHUB_TOKEN}`,
-    'User-Agent': 'eslint-action',
-  };
-
-  const body = {
-    name: CHECK_NAME,
-    head_sha: GITHUB_SHA,
-    status: 'completed',
-    completed_at: new Date(),
-    conclusion,
-    output
-  };
-
-  return request(githubCheckUrl(`/${id}`), {
-    method: 'PATCH',
-    headers,
-    body
-  });
+function suggestionBlock(message) {
+  const pieces = ['', '', '```suggestion', message, '```', ''];
+  return pieces.join('\n');
 }
 
 function parseEslintResponse(response) {
@@ -77,10 +31,10 @@ function parseEslintResponse(response) {
       let annotationMessage = `[${ruleId}]: ${message}`;
 
       if (fix) {
-        const suggestionFix = source.substr(0, fix.range[0]) + ';' + source.substr(fix.range[1]);
+        const suggestionFix = applyFix(source, fix);
         const lines = suggestionFix.split('\n');
         const effectLine = lines[line - 1];
-        annotationMessage += `\n\`\`\`suggestion\n${effectLine}\n\`\`\`\n`;
+        annotationMessage += suggestionBlock(effectLine);
       }
 
       annotations.push({
@@ -96,21 +50,21 @@ function parseEslintResponse(response) {
   return annotations;
 }
 
-function submitResult(id, { results, errorCount, warningCount }) {
+function submitResult(githubCheck, { results, errorCount, warningCount }) {
   const annotations = parseEslintResponse(results);
   const conclusion = errorCount <= 0 ? 'success' : 'failure';
   const output = {
-    title: CHECK_NAME,
     summary: `${errorCount} error${errorCount > 1 ? 's' : ''}, ${warningCount} warning${warningCount > 1 ? 's' : ''} found`,
     annotations,
   };
-  return updateCheck(id, conclusion, output).then(() => conclusion === 'success');
+  return githubCheck.update(conclusion, output).then(() => conclusion === 'success');
 }
 
 async function run() {
-  const checkResponse = await createCheck();
+  const githubCheck = new check(GITHUB_TOKEN, CHECK_NAME);
+  await githubCheck.create();
   const lintResponse = eslint();
-  const result = await submitResult(checkResponse.id, lintResponse);
+  const result = await submitResult(githubCheck, lintResponse);
 
   if (!result) process.exit(78);
 }
